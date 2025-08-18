@@ -265,12 +265,11 @@ class OllamaProvider(LLMProvider):
     def validate_config(self) -> bool:
         """Validate Ollama configuration"""
         try:
-            # Test connection and model availability
-            import asyncio
-            loop = asyncio.get_event_loop()
+            # Test connection and model availability using synchronous HTTP client
+            import httpx
             
-            async def test_connection():
-                response = await self.client.post(
+            with httpx.Client(timeout=10) as sync_client:
+                response = sync_client.post(
                     f"{self.base_url}/api/chat",
                     json={
                         "model": self.model,
@@ -279,8 +278,6 @@ class OllamaProvider(LLMProvider):
                     }
                 )
                 return response.status_code == 200
-            
-            return loop.run_until_complete(test_connection())
         except Exception as e:
             logger.error(f"Ollama config validation failed: {e}")
             return False
