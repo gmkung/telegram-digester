@@ -1,0 +1,60 @@
+# Test watchlist for unit tests
+watchlist:
+  channels:
+    - name: "@test_channel"
+      enabled: true
+      keywords: ["urgent", "test", "important"]
+      max_messages: 20
+      priority: "high"
+    - name: "@disabled_channel"
+      enabled: false
+      keywords: ["news"]
+      max_messages: 10
+      priority: "low"
+
+  chats:
+    - name: "Test Group"
+      chat_id: -1001234567890
+      enabled: true
+      keywords: ["project", "meeting", "deadline"]
+      max_messages: 15
+      priority: "medium"
+    - name: "Another Group"
+      chat_id: -1001234567891
+      enabled: true
+      keywords: ["budget", "finance"]
+      max_messages: 25
+      priority: "high"
+
+global_keywords:
+  - "urgent"
+  - "important"
+  - "critical"
+  - "deadline"
+  - "meeting"
+  - "@testuser"
+
+financial_keywords:
+  - "$"
+  - "USD"
+  - "EUR"
+  - "budget"
+  - "cost"
+  - "price"
+  - "payment"
+  - "invoice"
+
+temporal_keywords:
+  - "today"
+  - "tomorrow"
+  - "monday"
+  - "tuesday"
+  - "wednesday"
+  - "thursday"
+  - "friday"
+  - "saturday"
+  - "sunday"
+  - "deadline"
+  - "due"
+  - "meeting"
+  - "schedule"
