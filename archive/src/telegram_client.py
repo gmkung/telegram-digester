@@ -89,23 +89,31 @@ class TelegramDigestClient:
     async def get_chat_messages(
         self, 
         chat_identifier: str, 
-        limit: int = 100
+        limit: int = 100,
+        offset_date: Optional[datetime] = None
     ) -> List[TelegramMessage]:
         """Fetch recent messages from a specific chat or channel"""
         try:
+            logger.info(f"Fetching messages from {chat_identifier} with limit={limit}, offset_date={offset_date}")
+            
             # Get the chat entity
             entity = await self.client.get_entity(chat_identifier)
             
-            # Get recent messages
+            # Get recent messages with optional time filtering
             messages = []
-            async for message in self.client.iter_messages(entity, limit=limit):
+            async for message in self.client.iter_messages(entity, limit=limit, offset_date=offset_date):
                 if message.text:  # Only get messages with text
                     messages.append(await self._convert_message(message, entity))
             
             # Sort by timestamp (oldest first)
             messages.sort(key=lambda x: x.timestamp)
             
-            logger.info(f"Retrieved {len(messages)} messages from {chat_identifier}")
+            if messages:
+                oldest = messages[0].timestamp
+                newest = messages[-1].timestamp
+                logger.info(f"Retrieved {len(messages)} messages from {chat_identifier} (oldest: {oldest}, newest: {newest})")
+            else:
+                logger.info(f"Retrieved 0 messages from {chat_identifier}")
             return messages
             
         except FloodWaitError as e:
@@ -178,7 +186,8 @@ class TelegramDigestClient:
     
     async def collect_messages_from_watchlist(
         self, 
-        max_messages_per_chat: int = 100
+        max_messages_per_chat: int = 100,
+        offset_date: Optional[datetime] = None
     ) -> List[TelegramMessage]:
         """Collect messages from all watched chats and channels"""
         all_messages = []
@@ -198,7 +207,7 @@ class TelegramDigestClient:
             max_msgs = channel_config.get('max_messages', max_messages_per_chat)
             
             try:
-                messages = await self.get_chat_messages(channel_name, limit=max_msgs)
+                messages = await self.get_chat_messages(channel_name, limit=max_msgs, offset_date=offset_date)
                 if messages:
                     all_messages.extend(messages)
                     
@@ -219,7 +228,7 @@ class TelegramDigestClient:
             max_msgs = chat_config.get('max_messages', max_messages_per_chat)
             
             try:
-                messages = await self.get_chat_messages(chat_identifier, limit=max_msgs)
+                messages = await self.get_chat_messages(chat_identifier, limit=max_msgs, offset_date=offset_date)
                 if messages:
                     all_messages.extend(messages)
                     

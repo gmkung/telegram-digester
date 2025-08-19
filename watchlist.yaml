@@ -1,0 +1,30 @@
+chats:
+  # Public channels (use @username format)
+  - name: "@KlerosCurate"
+    enabled: true
+  
+  - name: "@kleros"
+    enabled: true
+  
+  - name: "@klerosespanol"
+    enabled: true
+  
+  - name: "@proofhumanity"
+    enabled: true
+
+  # Private chats/groups (use chat_id format)  
+  - name: "FutarchyDAO xKleros"
+    chat_id: -4519238761
+    enabled: true
+  
+  - name: "SeedGov Kleros"
+    chat_id: -1002151094298
+    enabled: true
+  
+  - name: "EF DeCom"
+    chat_id: -4852657384
+    enabled: true
+  
+  - name: "Private Chat 4"
+    chat_id: -1001595091055
+    enabled: true
