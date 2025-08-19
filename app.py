@@ -25,14 +25,10 @@ from src.storage import StorageManager, DigestRun
 # Load environment variables
 load_dotenv()
 
-# Setup logging
+# Setup basic logging (will be reconfigured after config load)
 logging.basicConfig(
-    level=logging.DEBUG,  # Enable debug logging
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('digest_bot.log'),
-        logging.StreamHandler(sys.stdout)
-    ]
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
 
@@ -69,6 +65,9 @@ class TelegramDigestBot:
             with open(self.watchlist_path, 'r') as f:
                 self.watchlist = yaml.safe_load(f)
             
+            # Configure logging based on config
+            self._setup_logging()
+            
             self.last_config_load = datetime.now()
             logger.info("Configuration loaded successfully")
             return True
@@ -76,6 +75,51 @@ class TelegramDigestBot:
         except Exception as e:
             logger.error(f"Failed to load configuration: {e}")
             return False
+    
+    def _setup_logging(self):
+        """Setup logging based on configuration"""
+        try:
+            log_config = self.config.get('logging', {})
+            log_level = getattr(logging, log_config.get('level', 'INFO').upper())
+            
+            # Clear existing handlers
+            root_logger = logging.getLogger()
+            for handler in root_logger.handlers[:]:
+                root_logger.removeHandler(handler)
+            
+            # Create formatter
+            formatter = logging.Formatter(log_config.get('format', '%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+            
+            # Add file handler if enabled
+            if log_config.get('file_logging', True):
+                file_handler = logging.FileHandler('digest_bot.log')
+                file_handler.setFormatter(formatter)
+                file_handler.setLevel(log_level)
+                root_logger.addHandler(file_handler)
+            
+            # Add console handler if enabled
+            if log_config.get('console_logging', True):
+                console_handler = logging.StreamHandler(sys.stdout)
+                console_handler.setFormatter(formatter)
+                console_handler.setLevel(log_level)
+                root_logger.addHandler(console_handler)
+            
+            # Set root logger level
+            root_logger.setLevel(log_level)
+            
+            logger.info(f"Logging configured: level={log_config.get('level', 'INFO')}, file={log_config.get('file_logging', True)}, console={log_config.get('console_logging', True)}")
+            
+        except Exception as e:
+            # Fallback to basic logging if config fails
+            logging.basicConfig(
+                level=logging.INFO,
+                format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+                handlers=[
+                    logging.FileHandler('digest_bot.log'),
+                    logging.StreamHandler(sys.stdout)
+                ]
+            )
+            logger.warning(f"Failed to configure logging from config, using fallback: {e}")
     
     def should_reload_config(self) -> bool:
         """Check if config should be reloaded (hot reload)"""
