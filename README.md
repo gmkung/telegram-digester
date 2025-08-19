@@ -1,6 +1,6 @@
 # Telegram Digest Bot
 
-A powerful Telegram bot that monitors your selected channels and chats, filters important messages, and generates AI-powered digests using OpenAI's Responses API or local Ollama models.
+A powerful Telegram bot that monitors your selected channels and chats, filters important messages, and generates AI-powered digests using OpenAI's Responses API or local Ollama models. Perfect for staying informed about important discussions across multiple Telegram channels without getting overwhelmed by the constant stream of messages.
 
 ## Architecture Flow
 
@@ -61,6 +61,9 @@ flowchart TD
 - **Privacy-Focused**: Optional sensitive data redaction for cloud LLMs
 - **Persistent Storage**: Maintains history and state across runs
 - **Flexible Scheduling**: Run continuously or on-demand
+- **Configurable Logging**: Easy control over log levels and output destinations
+- **Multi-Provider Support**: Seamlessly switch between OpenAI and local Ollama models
+- **Comprehensive Watchlists**: Monitor both public channels and private chats
 
 ## Quick Setup
 
@@ -87,10 +90,17 @@ telegram:
   api_hash: YOUR_API_HASH
 
 llm:
-  provider: "openai"  # or "ollama"
-  openai:
-    api_key: YOUR_OPENAI_API_KEY
-    model: "gpt-4.1"
+  provider: "ollama"  # or "openai"
+  ollama:
+    base_url: "http://localhost:11434"
+    model: "mistral:latest"
+    temperature: 0.1
+    top_p: 0.9
+
+logging:
+  level: "INFO"  # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file_logging: true
+  console_logging: true
 ```
 
 Edit `watchlist.yml` to specify which chats/channels to monitor:
@@ -100,10 +110,15 @@ watchlist:
     - name: "@your_channel"
       enabled: true
       keywords: ["urgent", "deadline", "meeting"]
+      max_messages: 50
+      priority: high
   chats:
     - name: "Work Group"
       chat_id: -1001234567890
       enabled: true
+      keywords: ["project", "deadline", "budget"]
+      max_messages: 30
+      priority: high
 ```
 
 ### 4. Run the Bot
@@ -132,14 +147,17 @@ python app.py --reset-cursors
 - **output**: Delivery settings (Saved Messages, JSON export)
 - **storage**: Data persistence and backup settings
 - **security**: Sensitive data redaction for cloud LLMs
+- **logging**: Configurable log levels, file/console output, and formats
 
 ### Watchlist (`watchlist.yml`)
 
 Define which chats and channels to monitor:
-- **channels**: Public channels using `@username`
-- **chats**: Private chats and groups using chat_id
-- **keywords**: Custom keywords per chat
+- **channels**: Public channels using `@username` (e.g., @kleros, @proofhumanity)
+- **chats**: Private chats and groups using chat_id (e.g., -1001234567890)
+- **keywords**: Custom keywords per chat for targeted filtering
 - **global_keywords**: Keywords applied to all monitored chats
+- **priority**: Set processing priority (high, medium, low) for each chat
+- **max_messages**: Limit messages collected per chat per cycle
 
 ### System Prompt (`prompts/digest_system.txt`)
 
@@ -168,17 +186,25 @@ llm:
 ### Local Ollama
 
 1. Install Ollama: https://ollama.ai
-2. Pull a model: `ollama pull llama3.2`
-3. Configure:
+2. Start Ollama service: `ollama serve`
+3. Pull a model: `ollama pull mistral:latest` (or llama3.2, codellama, etc.)
+4. Configure:
 
 ```yaml
 llm:
   provider: "ollama"
   ollama:
     base_url: "http://localhost:11434"
-    model: "llama3.2:latest"
-    temperature: 0.3
+    model: "mistral:latest"  # Use the model you pulled
+    temperature: 0.1
+    top_p: 0.9
 ```
+
+**Benefits of Ollama:**
+- **Privacy**: All processing happens locally
+- **Cost**: No API costs or rate limits
+- **Offline**: Works without internet connection
+- **Customizable**: Use different models and fine-tune parameters
 
 ## Usage Examples
 
@@ -273,9 +299,13 @@ The bot generates two types of output:
 ### Common Issues
 
 1. **Authentication Error**: Make sure `api_id` and `api_hash` are correct
-2. **LLM Connection Failed**: Check API keys and model availability
+2. **LLM Connection Failed**: 
+   - **OpenAI**: Check API keys and model availability
+   - **Ollama**: Ensure `ollama serve` is running and model is pulled
 3. **No Messages Found**: Verify chat IDs and permissions
 4. **Permission Denied**: Ensure the bot can read from specified chats
+5. **Ollama Validation Error**: Check if Ollama is accessible at `http://localhost:11434`
+6. **Private Chat Access**: Ensure you're a member of private chats you want to monitor
 
 ### Logs
 
@@ -305,25 +335,62 @@ global_keywords:
   - "urgent"
   - "deadline" 
   - "@your_username"
+  - "Kleros"
+  - "Curate"
+  - "Entries"
 
 financial_keywords:
   - "$"
   - "budget"
   - "invoice"
+  - "USD"
+  - "BTC"
+  - "price"
 
 temporal_keywords:
   - "today"
   - "tomorrow"
   - "meeting"
+  - "deadline"
+  - "due"
+  - "schedule"
 ```
+
+### Logging Configuration
+
+Easily control logging verbosity without code changes:
+
+```yaml
+logging:
+  level: "INFO"        # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  file_logging: true   # Log to digest_bot.log
+  console_logging: true # Log to terminal
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+```
+
+**Log Levels:**
+- **DEBUG**: Very verbose, all internal operations
+- **INFO**: Important events and progress (recommended)
+- **WARNING**: Only warnings and errors
+- **ERROR**: Only errors
+- **CRITICAL**: Only critical errors
 
 ### System Prompt Customization
 
 Edit `prompts/digest_system.txt` to change how the AI analyzes messages. You can:
-- Add industry-specific terminology
+- Add industry-specific terminology (e.g., blockchain, Kleros, arbitration)
 - Adjust focus areas (technical vs business)
-- Modify output format
+- Modify output format and structure
 - Add context about your role or priorities
+- Customize JSON schema for different use cases
+
+**Default Structure:**
+- **Urgent Items**: Immediate attention required
+- **Decisions**: Important decisions made or pending
+- **Topics**: Key discussions with summaries and participants
+- **People Updates**: Significant updates about team members
+- **Calendar**: Events, deadlines, and scheduled items
+- **Unanswered Mentions**: Direct questions requiring response
 
 ### Deployment
 
@@ -350,6 +417,8 @@ CMD ["python", "app.py"]
 export TELEGRAM_API_ID=your_api_id
 export TELEGRAM_API_HASH=your_api_hash
 export OPENAI_API_KEY=your_openai_key
+export OLLAMA_BASE_URL=http://localhost:11434
+export OLLAMA_MODEL=mistral:latest
 ```
 
 ## Testing
@@ -395,6 +464,7 @@ pytest --cov=src --cov-report=html  # With coverage
 
 All LLM requests and responses are logged with unique request IDs for debugging:
 
+**OpenAI:**
 ```
 [openai_1705123456] Sending request to OpenAI model gpt-4.1
 [openai_1705123456] Request input length: 1250 characters  
@@ -403,7 +473,16 @@ All LLM requests and responses are logged with unique request IDs for debugging:
 [openai_1705123456] Successfully parsed OpenAI response as JSON
 ```
 
-Check `digest_bot.log` for detailed error information and API debugging.
+**Ollama:**
+```
+[ollama_1705123456] Sending request to Ollama model mistral:latest
+[ollama_1705123456] Request URL: http://localhost:11434/api/chat
+[ollama_1705123456] Ollama response received in 53.65 seconds
+[ollama_1705123456] Model evaluation time: 29.61 seconds
+[ollama_1705123456] Successfully parsed Ollama response as JSON
+```
+
+Check `digest_bot.log` for detailed error information and API debugging. Use the configurable logging system to control verbosity levels.
 
 ### Mocking for Tests
 
@@ -412,6 +491,41 @@ Tests use comprehensive mocking:
 - `mock_httpx_client` - Mock Ollama HTTP client  
 - `mock_telethon_client` - Mock Telegram client
 - `temp_data_dir` - Isolated temporary storage
+
+## Recent Updates & Features
+
+### Latest Improvements (v2.0+)
+- **Ollama Integration**: Full support for local LLM models with automatic JSON parsing
+- **Configurable Logging**: Easy control over log levels without code changes
+- **Enhanced Watchlists**: Support for both public channels and private chats with priority levels
+- **Improved Digest Formatting**: Better organization with emojis and clear section headers
+- **Multi-Provider Architecture**: Seamless switching between OpenAI and Ollama
+- **Enhanced Error Handling**: Better validation and fallback mechanisms
+
+### Example Watchlist Configuration
+```yaml
+watchlist:
+  channels:
+    - name: "@kleros"
+      enabled: true
+      keywords: ["Kleros", "arbitration", "dispute", "resolution"]
+      max_messages: 50
+      priority: high
+    
+    - name: "@proofhumanity"
+      enabled: true
+      keywords: ["Proof of Humanity", "PoH", "identity"]
+      max_messages: 50
+      priority: medium
+  
+  chats:
+    - name: "Private Kleros Channel"
+      chat_id: -1001234567890
+      enabled: true
+      keywords: ["internal", "announcement", "update"]
+      max_messages: 50
+      priority: high
+```
 
 ## Contributing
 
