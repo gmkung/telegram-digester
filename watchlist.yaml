@@ -15,7 +15,7 @@ chats:
     enabled: true
 
   # Private chats/groups (use chat_id format)  
-  - name: "FutarchyDAO xKleros"
+  - name: "FutarchyDAO x Kleros"
     chat_id: -4519238761
     enabled: true
   
