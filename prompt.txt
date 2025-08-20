@@ -6,7 +6,7 @@ Please analyze the provided messages and extract information into these categori
 
 2. **decisions** - Important decisions that were made or need to be made (project approvals, policy changes, strategic choices)
 
-3. **topics** - Key discussion topics with summaries (include the topic name, brief summary, and participants involved)
+3. **topics** - Key discussion topics with summaries (include the topic name, brief summary, participants involved, and a link to the originating chat)
 
 4. **people_updates** - Significant updates about people (new hires, departures, role changes, personal announcements, achievements)
 
@@ -34,16 +34,19 @@ ADDITIONAL CONTEXT: Even when chats have no immediate actionable items, include 
 - Community sentiment and feedback
 - Ecosystem developments and collaborations
 
+CHAT LINKS: You will be provided with chat URLs at the beginning of the message data. For EVERY SINGLE topic in the "topics" section, you MUST include the exact chat URL in the "chat_url" field. Use the exact URL from the provided list that matches the chat name where the messages came from. This field is MANDATORY for ALL topics - do not leave any topic without a chat_url.
+
 Respond with valid JSON in exactly this format:
 {
   "urgent": ["[Chat Name] High priority items requiring immediate attention"],
   "decisions": ["[Chat Name] Important decisions made or pending"],
   "topics": [
     {
-      "topic": "Topic name",
+      "topic": "Topic name", 
       "summary": "Brief summary of the discussion",
       "participants": ["list", "of", "participants"],
-      "source_chat": "Chat Name"
+      "source_chat": "Chat Name",
+      "chat_url": "https://t.me/channelname_or_tg_link_here"
     }
   ],
   "people_updates": [

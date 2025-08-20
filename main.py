@@ -50,9 +50,15 @@ async def main():
             config['settings']['output_dir']
         )
         
+        # Generate chat URLs from messages
+        chat_urls = {}
+        for msg in messages:
+            if msg.get('chat_url'):
+                chat_urls[msg['chat']] = msg['chat_url']
+        
         # Format concise summary for Telegram
         print("📱 Sending summary to Telegram...")
-        summary_text = format_telegram_summary(digest_data)
+        summary_text = format_telegram_summary(digest_data, chat_urls)
         await send_summary(summary_text, config['telegram'])
         
         print("✅ Digest generation completed successfully!")

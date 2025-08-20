@@ -46,7 +46,9 @@ class DigestStructure:
                                 topics.append({
                                     'topic': str(topic.get('topic', '')),
                                     'summary': str(topic.get('summary', '')),
-                                    'participants': [str(p) for p in topic.get('participants', [])]
+                                    'participants': [str(p) for p in topic.get('participants', [])],
+                                    'source_chat': str(topic.get('source_chat', '')),
+                                    'chat_url': str(topic.get('chat_url', ''))
                                 })
                         validated[field] = topics
                     else:
@@ -91,13 +93,23 @@ def format_messages_for_llm(messages: List[Dict[str, Any]]) -> str:
     
     # Group messages by chat for better organization
     messages_by_chat = {}
+    chat_urls = {}  # Store chat URLs
+    
     for msg in messages:
         chat_name = msg['chat']
         if chat_name not in messages_by_chat:
             messages_by_chat[chat_name] = []
         messages_by_chat[chat_name].append(msg)
+        
+        # Store chat URL (will be the same for all messages from this chat)
+        if msg.get('chat_url'):
+            chat_urls[chat_name] = msg['chat_url']
     
-    formatted_text = ""
+    # Add chat URLs section for LLM reference
+    formatted_text = "Chat URLs for linking:\n"
+    for chat_name, url in chat_urls.items():
+        formatted_text += f"- {chat_name}: {url}\n"
+    formatted_text += "\n"
     
     for chat_name, chat_messages in messages_by_chat.items():
         formatted_text += f"\n## {chat_name} ({len(chat_messages)} messages)\n"
@@ -125,7 +137,6 @@ def format_messages_for_llm(messages: List[Dict[str, Any]]) -> str:
 - Total messages: {total_messages}
 - Chats involved: {len(messages_by_chat)}
 
-Messages:
 """
     
     return stats + formatted_text

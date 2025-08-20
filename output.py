@@ -84,7 +84,17 @@ def format_as_markdown(digest_data: Dict[str, Any]) -> str:
             if topic.get('participants'):
                 participants = ', '.join(topic['participants'])
                 content += f"*Participants: {participants}*\n"
-            content += f"{topic['summary']}\n\n"
+            content += f"{topic['summary']}\n"
+            
+            # Add chat link from LLM response or fallback to watchlist lookup
+            chat_url = topic.get('chat_url', '')
+            if not chat_url and watchlist:
+                chat_url = get_chat_url(topic['topic'], watchlist)
+            
+            if chat_url:
+                content += f"→ [Open chat]({chat_url})\n"
+            
+            content += "\n"
         sections_with_content += 1
     
     # People Updates
@@ -102,7 +112,7 @@ def format_as_markdown(digest_data: Dict[str, Any]) -> str:
     return content
 
 
-def format_telegram_summary(digest_data: Dict[str, Any]) -> str:
+def format_telegram_summary(digest_data: Dict[str, Any], chat_urls: Dict[str, str] = None) -> str:
     """
     Create concise text for Telegram (max 2-3 lines per section)
     Focus on urgent/actionable items only
@@ -164,5 +174,23 @@ def format_telegram_summary(digest_data: Dict[str, Any]) -> str:
         lines.append(f"✅ {decision_text}")
         if len(digest_data['decisions']) > 1:
             lines.append(f"✅ +{len(digest_data['decisions']) - 1} more decisions")
+    
+    # Add top 2 topics with chat links for easy access
+    if digest_data.get('topics'):
+        lines.append("")  # Empty line
+        lines.append("💬 Quick access:")
+        top_topics = digest_data['topics'][:2]  # Show top 2 topics
+        for topic in top_topics:
+            topic_name = topic.get('topic', 'Topic')[:30]  # Truncate
+            
+            # Use the chat_url from LLM response directly, fallback to chat_urls lookup
+            url = topic.get('chat_url', '')
+            if not url and chat_urls:
+                source_chat = topic.get('source_chat', '')
+                if source_chat in chat_urls:
+                    url = chat_urls[source_chat]
+            
+            if url:
+                lines.append(f"📍 {topic_name}: {url}")
     
     return '\n'.join(lines)

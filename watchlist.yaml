@@ -11,6 +11,8 @@ chats:
   
   - name: "@proofhumanity"
     enabled: true
+  - name: "@klerosescrow"
+    enabled: true
 
   # Private chats/groups (use chat_id format)  
   - name: "FutarchyDAO xKleros"
@@ -28,3 +30,7 @@ chats:
   - name: "Private Chat 4"
     chat_id: -1001595091055
     enabled: true
+  
+  - name: "Piloto Exchange"
+    chat_id: -1002086314714
+    enabled: true 

@@ -120,6 +120,16 @@ class TelegramDigestClient:
             print(f"Error collecting from {chat_identifier}: {e}")
             return []
 
+    def _generate_chat_url(self, entity) -> str:
+        """Generate Telegram URL for a chat entity"""
+        if hasattr(entity, 'username') and entity.username:
+            # Public channel with username
+            return f"https://t.me/{entity.username}"
+        elif hasattr(entity, 'id'):
+            # Private chat or channel without username
+            return f"tg://resolve?domain={entity.id}"
+        return ""
+
     async def _normalize_message(self, message, chat_name: str, entity) -> Dict[str, Any]:
         """Convert Telethon message to normalized dictionary format"""
         # Get sender name
@@ -134,8 +144,12 @@ class TelegramDigestClient:
             elif hasattr(message.sender, 'username'):
                 sender_name = f"@{message.sender.username}"
         
+        # Generate chat URL
+        chat_url = self._generate_chat_url(entity)
+        
         return {
             'chat': chat_name,
+            'chat_url': chat_url,
             'sender': sender_name,
             'time': message.date,
             'text': message.text or ""
